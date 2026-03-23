@@ -1,128 +1,120 @@
 import streamlit as st
 import pandas as pd
 import os
+import io
+from fpdf import FPDF
 
 # ==========================================
 # 1. CONFIGURAÇÃO DA PÁGINA
 # ==========================================
 st.set_page_config(page_title="Doações ECC", layout="centered")
 
-ARQUIVO_DADOS = 'banco_doacoes.csv'
+# Mudei o nome do arquivo para V2 para resetar o formato antigo e não dar erro!
+ARQUIVO_DADOS = 'banco_doacoes_v2.csv'
 
 # ==========================================
 # 2. INICIALIZAÇÃO DO BANCO DE DADOS (CSV)
 # ==========================================
 def carregar_dados():
-    # Se o arquivo já existe, carrega ele (para manter os dados salvos)
     if os.path.exists(ARQUIVO_DADOS):
         return pd.read_csv(ARQUIVO_DADOS)
     
-    # Se não existe, cria o banco de dados inicial
+    # Nova estrutura com Qtd Total, Faltante e Unidades!
     dados_iniciais = [
-        # Sábado - Almoço
-        {"Categoria": "Almoço Sáb", "Item": "Arroz branco (8kg)", "Status": "Doado", "Doador": "Têre (Betel)"},
-        {"Categoria": "Almoço Sáb", "Item": "Arroz branco (5kg)", "Status": "Doado", "Doador": "Cristina (Maranata)"},
-        {"Categoria": "Almoço Sáb", "Item": "Peito de Frango s/osso (65kg)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Batata palha (18kg)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Creme de leite (2 cx c/ 20)", "Status": "Doado", "Doador": "Neemias"},
-        {"Categoria": "Almoço Sáb", "Item": "Champion (1 Balde)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Ketchup (1 litro)", "Status": "Doado", "Doador": "Onória (Betel)"},
-        {"Categoria": "Almoço Sáb", "Item": "Mostarda (1 litro)", "Status": "Doado", "Doador": "Onória (Betel)"},
-        {"Categoria": "Almoço Sáb", "Item": "Shoyo (1 litro)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Tomate (10 kg)", "Status": "Doado", "Doador": "André Aranha"},
-        {"Categoria": "Almoço Sáb", "Item": "Alface (15 maços)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Cenoura (6kg)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Vagem (3kg)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Sáb", "Item": "Massa de tomate (6Kg)", "Status": "Pendente", "Doador": ""},
-        # Sábado - Mousse
-        {"Categoria": "Sobremesa Sáb", "Item": "Suco maracujá conc. (10 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Sobremesa Sáb", "Item": "Creme de leite (1 cx c/20)", "Status": "Doado", "Doador": "Nize (Maranata)"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Creme de leite (5 cx c/20)", "Status": "Doado", "Doador": "Neemias"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Leite moça (20 caixinhas)", "Status": "Doado", "Doador": "Marcos e Thays"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Limão (2 kg)", "Status": "Doado", "Doador": "Ivanice (Maranata)"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Creme de leite p/ limão (3 cx c/20)", "Status": "Doado", "Doador": "Diego (Ágape)"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Creme de leite p/ limão (3 cx c/20)", "Status": "Doado", "Doador": "Neemias"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Leite moça p/ limão (20 caixinhas)", "Status": "Doado", "Doador": "Marcos e Thays"},
-        {"Categoria": "Sobremesa Sáb", "Item": "Copinhos sobremesa c/tampa (400)", "Status": "Doado", "Doador": "Indianara (Maranata)"},
-        # Domingo - Almoço e Risoto
-        {"Categoria": "Almoço Dom", "Item": "Macarrão (10 kg)", "Status": "Doado", "Doador": "Silvia e Onória"},
-        {"Categoria": "Almoço Dom", "Item": "Molho de tomate (6 kg)", "Status": "Doado", "Doador": "Juliana Borges"},
-        {"Categoria": "Almoço Dom", "Item": "Carne moída (60 kg)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Dom", "Item": "Alface (15 maços)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Almoço Dom", "Item": "Tomate (6 kg)", "Status": "Doado", "Doador": "Miely"},
-        {"Categoria": "Almoço Dom", "Item": "Milho verde (2 kg)", "Status": "Doado", "Doador": "Miely"},
-        {"Categoria": "Almoço Dom", "Item": "Ervilha (1 kg)", "Status": "Doado", "Doador": "Miely"},
-        {"Categoria": "Almoço Dom", "Item": "Maionese Hellman's (2 kg)", "Status": "Doado", "Doador": "Miely"},
-        {"Categoria": "Risoto Dom", "Item": "Arroz branco (10kg)", "Status": "Doado", "Doador": "Shin (Betel)"},
-        {"Categoria": "Risoto Dom", "Item": "Tomate cereja (2 caixas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Risoto Dom", "Item": "Creme de leite (1 cx c/20)", "Status": "Doado", "Doador": "Marcos e Thays"},
-        {"Categoria": "Risoto Dom", "Item": "Leite de coco (5 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Risoto Dom", "Item": "Requeijão (4 potes)", "Status": "Pendente", "Doador": ""},
-        # Domingo - Pudim
-        {"Categoria": "Sobremesa Dom", "Item": "Leite (6 Litros) - Parte 1", "Status": "Doado", "Doador": "Valéria (Maranata)"},
-        {"Categoria": "Sobremesa Dom", "Item": "Leite (6 Litros) - Parte 2", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Sobremesa Dom", "Item": "Pudim de baunilha (13 cx) - Parte 1", "Status": "Doado", "Doador": "Valéria (Maranata)"},
-        {"Categoria": "Sobremesa Dom", "Item": "Pudim de baunilha (13 cx) - Parte 2", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Sobremesa Dom", "Item": "Chantily (2 litros)", "Status": "Doado", "Doador": "Michele (Maranata)"},
-        {"Categoria": "Sobremesa Dom", "Item": "Açúcar (5 kg)", "Status": "Doado", "Doador": "Nádia (Maranata)"},
+        # Almoço Sábado
+        {"Categoria": "Almoço Sáb", "Item": "Arroz branco", "Qtd_Total": 13.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Têre (Betel) (8kg), Cristina (Maranata) (5kg)"},
+        {"Categoria": "Almoço Sáb", "Item": "Peito de Frango s/osso", "Qtd_Total": 65.0, "Unidade": "kg", "Qtd_Faltante": 65.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Batata palha", "Qtd_Total": 18.0, "Unidade": "kg", "Qtd_Faltante": 18.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Creme de leite", "Qtd_Total": 2.0, "Unidade": "cx c/ 20", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Neemias (2cx)"},
+        {"Categoria": "Almoço Sáb", "Item": "Champion", "Qtd_Total": 1.0, "Unidade": "Balde", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Ketchup", "Qtd_Total": 1.0, "Unidade": "litro", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Onória (Betel) (1L)"},
+        {"Categoria": "Almoço Sáb", "Item": "Mostarda", "Qtd_Total": 1.0, "Unidade": "litro", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Onória (Betel) (1L)"},
+        {"Categoria": "Almoço Sáb", "Item": "Shoyo", "Qtd_Total": 1.0, "Unidade": "litro", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Tomate", "Qtd_Total": 10.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "André Aranha (10kg)"},
+        {"Categoria": "Almoço Sáb", "Item": "Alface", "Qtd_Total": 15.0, "Unidade": "maços", "Qtd_Faltante": 15.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Cenoura", "Qtd_Total": 6.0, "Unidade": "kg", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Vagem", "Qtd_Total": 3.0, "Unidade": "kg", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Sáb", "Item": "Massa de tomate", "Qtd_Total": 6.0, "Unidade": "kg", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": ""},
+        # Sobremesa Sábado
+        {"Categoria": "Sobremesa Sáb", "Item": "Suco maracujá conc.", "Qtd_Total": 10.0, "Unidade": "garrafas", "Qtd_Faltante": 10.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Sobremesa Sáb", "Item": "Creme de leite", "Qtd_Total": 6.0, "Unidade": "cx c/20", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Nize (Maranata) (1cx), Neemias (5cx)"},
+        {"Categoria": "Sobremesa Sáb", "Item": "Leite moça", "Qtd_Total": 20.0, "Unidade": "cx", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Marcos e Thays (20cx)"},
+        {"Categoria": "Sobremesa Sáb", "Item": "Limão", "Qtd_Total": 2.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Ivanice (Maranata) (2kg)"},
+        {"Categoria": "Sobremesa Sáb", "Item": "Creme de leite p/ limão", "Qtd_Total": 6.0, "Unidade": "cx c/20", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Diego (Ágape) (3cx), Neemias (3cx)"},
+        {"Categoria": "Sobremesa Sáb", "Item": "Leite moça p/ limão", "Qtd_Total": 20.0, "Unidade": "cx", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Marcos e Thays (20cx)"},
+        {"Categoria": "Sobremesa Sáb", "Item": "Copinhos sobremesa c/tampa", "Qtd_Total": 400.0, "Unidade": "unid.", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Indianara (Maranata) (400)"},
+        # Almoço Domingo
+        {"Categoria": "Almoço Dom", "Item": "Macarrão", "Qtd_Total": 10.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Silvia e Onória (10kg)"},
+        {"Categoria": "Almoço Dom", "Item": "Molho de tomate", "Qtd_Total": 6.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Juliana Borges (6kg)"},
+        {"Categoria": "Almoço Dom", "Item": "Carne moída", "Qtd_Total": 60.0, "Unidade": "kg", "Qtd_Faltante": 60.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Dom", "Item": "Alface", "Qtd_Total": 15.0, "Unidade": "maços", "Qtd_Faltante": 15.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Almoço Dom", "Item": "Tomate", "Qtd_Total": 6.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Miely (6kg)"},
+        {"Categoria": "Almoço Dom", "Item": "Milho verde", "Qtd_Total": 2.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Miely (2kg)"},
+        {"Categoria": "Almoço Dom", "Item": "Ervilha", "Qtd_Total": 1.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Miely (1kg)"},
+        {"Categoria": "Almoço Dom", "Item": "Maionese Hellman's", "Qtd_Total": 2.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Miely (2kg)"},
+        # Risoto Domingo
+        {"Categoria": "Risoto Dom", "Item": "Arroz branco", "Qtd_Total": 10.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Shin (Betel) (10kg)"},
+        {"Categoria": "Risoto Dom", "Item": "Tomate cereja", "Qtd_Total": 2.0, "Unidade": "caixas", "Qtd_Faltante": 2.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Risoto Dom", "Item": "Creme de leite", "Qtd_Total": 1.0, "Unidade": "cx c/20", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Marcos e Thays (1cx)"},
+        {"Categoria": "Risoto Dom", "Item": "Leite de coco", "Qtd_Total": 5.0, "Unidade": "garrafas", "Qtd_Faltante": 5.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Risoto Dom", "Item": "Requeijão", "Qtd_Total": 4.0, "Unidade": "potes", "Qtd_Faltante": 4.0, "Status": "Pendente", "Doadores": ""},
+        # Sobremesa Domingo
+        {"Categoria": "Sobremesa Dom", "Item": "Leite", "Qtd_Total": 12.0, "Unidade": "Litros", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": "Valéria (Maranata) (6 L)"},
+        {"Categoria": "Sobremesa Dom", "Item": "Pudim de baunilha", "Qtd_Total": 26.0, "Unidade": "cx", "Qtd_Faltante": 13.0, "Status": "Pendente", "Doadores": "Valéria (Maranata) (13 cx)"},
+        {"Categoria": "Sobremesa Dom", "Item": "Chantily", "Qtd_Total": 2.0, "Unidade": "litros", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Michele (Maranata) (2L)"},
+        {"Categoria": "Sobremesa Dom", "Item": "Açúcar", "Qtd_Total": 5.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Nádia (Maranata) (5kg)"},
         # Bebidas
-        {"Categoria": "Bebidas", "Item": "Coca-cola normal 2L (6 garrafas)", "Status": "Doado", "Doador": "Marcos e Thays"},
-        {"Categoria": "Bebidas", "Item": "Coca-cola normal 2L (6 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Bebidas", "Item": "Coca-cola Zero 2L (6 garrafas)", "Status": "Doado", "Doador": "Marcos e Thays"},
-        {"Categoria": "Bebidas", "Item": "Coca-cola Zero 2L (6 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Bebidas", "Item": "Guaraná normal 2L (6 garrafas)", "Status": "Doado", "Doador": "Luiza (Maranata)"},
-        {"Categoria": "Bebidas", "Item": "Guaraná normal 2L (6 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Bebidas", "Item": "Guaraná Zero 2L (10 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Bebidas", "Item": "Fanta laranja 2L (6 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Bebidas", "Item": "Fanta laranja 2L (6 garrafas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Bebidas", "Item": "Água mineral c/ gás 1,5L (12 garrafas)", "Status": "Pendente", "Doador": ""},
+        {"Categoria": "Bebidas", "Item": "Coca-cola normal 2L", "Qtd_Total": 12.0, "Unidade": "garrafas", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": "Marcos e Thays (6 un)"},
+        {"Categoria": "Bebidas", "Item": "Coca-cola Zero 2L", "Qtd_Total": 12.0, "Unidade": "garrafas", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": "Marcos e Thays (6 un)"},
+        {"Categoria": "Bebidas", "Item": "Guaraná normal 2L", "Qtd_Total": 12.0, "Unidade": "garrafas", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": "Luiza (Maranata) (6 un)"},
+        {"Categoria": "Bebidas", "Item": "Guaraná Zero 2L", "Qtd_Total": 10.0, "Unidade": "garrafas", "Qtd_Faltante": 10.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Bebidas", "Item": "Fanta laranja 2L", "Qtd_Total": 12.0, "Unidade": "garrafas", "Qtd_Faltante": 12.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Bebidas", "Item": "Água min. c/ gás 1,5L", "Qtd_Total": 12.0, "Unidade": "garrafas", "Qtd_Faltante": 12.0, "Status": "Pendente", "Doadores": ""},
         # Café da Manhã
-        {"Categoria": "Café da Manhã", "Item": "Morango (4 caixas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Uva Italia (2 caixas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Uva Rubi (2 caixas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Mamão formosa (5 unidades)", "Status": "Doado", "Doador": "Cliceu (Maranata)"},
-        {"Categoria": "Café da Manhã", "Item": "Ovos (20 dúzias)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Queijo mussarela (1 quilo)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Queijo prato (1 quilo)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Presunto (1 quilo)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Salame (1/2 quilo)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Mortadela (1/2 quilo)", "Status": "Doado", "Doador": "Cliceu (Maranata)"},
-        {"Categoria": "Café da Manhã", "Item": "Café Lontrinha (5 quilos)", "Status": "Doado", "Doador": "Marcos e Thays"},
-        {"Categoria": "Café da Manhã", "Item": "Suco de caixinha (6 cx 1L)", "Status": "Doado", "Doador": "Kari (Maranata)"},
-        {"Categoria": "Café da Manhã", "Item": "Suco de caixinha (6 cx 1L)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Leite integral (18 litros)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Leite sem lactose (3 litros)", "Status": "Doado", "Doador": "Nádia (Maranata)"},
-        {"Categoria": "Café da Manhã", "Item": "Açúcar (3 quilos)", "Status": "Doado", "Doador": "Michele (Maranata)"},
-        {"Categoria": "Café da Manhã", "Item": "Açúcar (4 quilos)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Água (4 galões 5L)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Bolacha salgada (5 quilos)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Café da Manhã", "Item": "Bolacha recheada (10 quilos)", "Status": "Pendente", "Doador": ""},
+        {"Categoria": "Café da Manhã", "Item": "Morango", "Qtd_Total": 4.0, "Unidade": "caixas", "Qtd_Faltante": 4.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Uva Italia", "Qtd_Total": 2.0, "Unidade": "caixas", "Qtd_Faltante": 2.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Uva Rubi", "Qtd_Total": 2.0, "Unidade": "caixas", "Qtd_Faltante": 2.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Mamão formosa", "Qtd_Total": 5.0, "Unidade": "unid.", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Cliceu (Maranata) (5)"},
+        {"Categoria": "Café da Manhã", "Item": "Ovos", "Qtd_Total": 20.0, "Unidade": "dúzias", "Qtd_Faltante": 20.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Queijo mussarela", "Qtd_Total": 1.0, "Unidade": "kg", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Queijo prato", "Qtd_Total": 1.0, "Unidade": "kg", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Presunto", "Qtd_Total": 1.0, "Unidade": "kg", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Salame", "Qtd_Total": 0.5, "Unidade": "kg", "Qtd_Faltante": 0.5, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Mortadela", "Qtd_Total": 0.5, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Cliceu (Maranata) (0.5kg)"},
+        {"Categoria": "Café da Manhã", "Item": "Café Lontrinha", "Qtd_Total": 5.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Marcos e Thays (5kg)"},
+        {"Categoria": "Café da Manhã", "Item": "Suco de caixinha", "Qtd_Total": 12.0, "Unidade": "cx 1L", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": "Kari (Maranata) (6cx)"},
+        {"Categoria": "Café da Manhã", "Item": "Leite integral", "Qtd_Total": 18.0, "Unidade": "litros", "Qtd_Faltante": 18.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Leite sem lactose", "Qtd_Total": 3.0, "Unidade": "litros", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Nádia (Maranata) (3L)"},
+        {"Categoria": "Café da Manhã", "Item": "Açúcar", "Qtd_Total": 7.0, "Unidade": "kg", "Qtd_Faltante": 4.0, "Status": "Pendente", "Doadores": "Michele (Maranata) (3kg)"},
+        {"Categoria": "Café da Manhã", "Item": "Água", "Qtd_Total": 4.0, "Unidade": "galões 5L", "Qtd_Faltante": 4.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Bolacha salgada", "Qtd_Total": 5.0, "Unidade": "kg", "Qtd_Faltante": 5.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Café da Manhã", "Item": "Bolacha recheada", "Qtd_Total": 10.0, "Unidade": "kg", "Qtd_Faltante": 10.0, "Status": "Pendente", "Doadores": ""},
         # Chá
-        {"Categoria": "Chá", "Item": "Chá mate natural à granel (1 caixa)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Chá", "Item": "Maçãs (12 unidades)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Chá", "Item": "Abacaxi (6 unidades)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Chá", "Item": "Cravo (3 pacotes)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Chá", "Item": "Canela em rama (3 pacotes)", "Status": "Pendente", "Doador": ""},
-        # Outros
-        {"Categoria": "Temperos/Outros", "Item": "Cebola (4 kg)", "Status": "Doado", "Doador": "Nazira"},
-        {"Categoria": "Temperos/Outros", "Item": "Alho (1 kg)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Vinagre (2 litros)", "Status": "Doado", "Doador": "Nilceu (Betel)"},
-        {"Categoria": "Temperos/Outros", "Item": "Óleo (6 litros)", "Status": "Doado", "Doador": "Juliana Borges"},
-        {"Categoria": "Temperos/Outros", "Item": "Pimenta em pó (3 pacotes)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Sal (4 pacotes)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Creme de cebola (2 pacotes)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Margarina grande (1 pote)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Orégano (1 pacote)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Tomate cereja (2 caixas)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Pimentão vermelho (3 unidades)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Pimentão amarelo (3 unidades)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Pimentão verde (3 unidades)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Alho poró (1 maço)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Salsão (1 maço)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Caldo de legumes (1 pacote)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Cheiro verde (7 maços)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Temperos/Outros", "Item": "Cebola roxa (7 unidades)", "Status": "Pendente", "Doador": ""},
-        {"Categoria": "Diversos", "Item": "Copos com água mineral (300 unid.)", "Status": "Pendente", "Doador": ""}
+        {"Categoria": "Chá", "Item": "Chá mate nat. à granel", "Qtd_Total": 1.0, "Unidade": "caixa", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Chá", "Item": "Maçãs", "Qtd_Total": 12.0, "Unidade": "unid.", "Qtd_Faltante": 12.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Chá", "Item": "Abacaxi", "Qtd_Total": 6.0, "Unidade": "unid.", "Qtd_Faltante": 6.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Chá", "Item": "Cravo", "Qtd_Total": 3.0, "Unidade": "pct", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Chá", "Item": "Canela em rama", "Qtd_Total": 3.0, "Unidade": "pct", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        # Temperos/Outros
+        {"Categoria": "Temperos", "Item": "Cebola", "Qtd_Total": 4.0, "Unidade": "kg", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Nazira (4kg)"},
+        {"Categoria": "Temperos", "Item": "Alho", "Qtd_Total": 1.0, "Unidade": "kg", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Vinagre", "Qtd_Total": 2.0, "Unidade": "litros", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Nilceu (Betel) (2L)"},
+        {"Categoria": "Temperos", "Item": "Óleo", "Qtd_Total": 6.0, "Unidade": "litros", "Qtd_Faltante": 0.0, "Status": "Doado", "Doadores": "Juliana Borges (6L)"},
+        {"Categoria": "Temperos", "Item": "Pimenta em pó", "Qtd_Total": 3.0, "Unidade": "pct", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Sal", "Qtd_Total": 4.0, "Unidade": "pct", "Qtd_Faltante": 4.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Creme de cebola", "Qtd_Total": 2.0, "Unidade": "pct", "Qtd_Faltante": 2.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Margarina", "Qtd_Total": 1.0, "Unidade": "pote gr.", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Orégano", "Qtd_Total": 1.0, "Unidade": "pct", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Tomate cereja", "Qtd_Total": 2.0, "Unidade": "cx", "Qtd_Faltante": 2.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Pimentão vermelho", "Qtd_Total": 3.0, "Unidade": "unid.", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Pimentão amarelo", "Qtd_Total": 3.0, "Unidade": "unid.", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Pimentão verde", "Qtd_Total": 3.0, "Unidade": "unid.", "Qtd_Faltante": 3.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Alho poró", "Qtd_Total": 1.0, "Unidade": "maço", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Salsão", "Qtd_Total": 1.0, "Unidade": "maço", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Caldo de legumes", "Qtd_Total": 1.0, "Unidade": "pct", "Qtd_Faltante": 1.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Cheiro verde", "Qtd_Total": 7.0, "Unidade": "maços", "Qtd_Faltante": 7.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Temperos", "Item": "Cebola roxa", "Qtd_Total": 7.0, "Unidade": "unid.", "Qtd_Faltante": 7.0, "Status": "Pendente", "Doadores": ""},
+        {"Categoria": "Diversos", "Item": "Copos c/ água mineral", "Qtd_Total": 300.0, "Unidade": "unid.", "Qtd_Faltante": 300.0, "Status": "Pendente", "Doadores": ""}
     ]
     df = pd.DataFrame(dados_iniciais)
     df.to_csv(ARQUIVO_DADOS, index=False)
@@ -134,52 +126,65 @@ def salvar_dados(df):
 # Carrega os dados sempre que a página atualiza
 df_doacoes = carregar_dados()
 
-# Variáveis de controle de tela
 if 'etapa' not in st.session_state:
     st.session_state.etapa = 1
 if 'itens_selecionados' not in st.session_state:
     st.session_state.itens_selecionados = []
 
 # ==========================================
-# 3. MENU LATERAL (Navegação)
+# 3. MENU LATERAL
 # ==========================================
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3048/3048122.png", width=100)
 st.sidebar.title("Menu ECC")
 menu = st.sidebar.radio("Escolha a página:", ["Área de Doação (Irmãos)", "Painel de Controle (Coordenação)"])
 
 # ==========================================
-# 4. TELA 1: ÁREA DE DOAÇÃO (Para os irmãos)
+# 4. TELA 1: ÁREA DE DOAÇÃO (PARCIAL)
 # ==========================================
 if menu == "Área de Doação (Irmãos)":
     st.title("Lista de Doações - ECC 🙏")
     
-    # Filtra apenas o que ainda está pendente
     df_pendentes = df_doacoes[df_doacoes["Status"] == "Pendente"]
 
     if df_pendentes.empty:
-        st.success("Glória a Deus! Todos os itens já foram doados. Muito obrigado a todos!")
+        st.success("Glória a Deus! Todos os itens já foram doados.")
     else:
-        # ETAPA 1: ONDE ACONTECEU A CORREÇÃO DO ERRO
         if st.session_state.etapa == 1:
-            st.header("1. O que você gostaria de doar?")
-            st.write("Marque os itens abaixo e clique em Próximo.")
+            st.write("Marque o que deseja doar. Se o item tiver muita quantidade, você pode escolher doar apenas uma parte!")
             
             selecionados_agora = []
             
             categorias = df_pendentes['Categoria'].unique()
             for cat in categorias:
-                st.subheader(f"📌 {cat}")
-                
-                # Pega os itens da categoria com o número original da linha
-                df_cat = df_pendentes[df_pendentes['Categoria'] == cat]
-                for idx, row in df_cat.iterrows():
-                    nome_do_item = row['Item']
-                    
-                    # Cria uma chave única com o número da linha para evitar erro de nomes iguais
-                    chave_unica = f"item_{idx}"
-                    
-                    if st.checkbox(nome_do_item, key=chave_unica):
-                        selecionados_agora.append(idx)
+                with st.expander(f"📌 {cat}", expanded=True):
+                    df_cat = df_pendentes[df_pendentes['Categoria'] == cat]
+                    for idx, row in df_cat.iterrows():
+                        falta = float(row['Qtd_Faltante'])
+                        unidade = row['Unidade']
+                        
+                        # Formata pra não ficar "8.0" se for número redondo
+                        falta_disp = int(falta) if falta.is_integer() else falta
+                        total_disp = int(row['Qtd_Total']) if float(row['Qtd_Total']).is_integer() else row['Qtd_Total']
+                        
+                        nome_display = f"📦 {row['Item']} (Falta: {falta_disp} {unidade} de {total_disp} {unidade})"
+                        chave_unica = f"item_{idx}"
+                        
+                        # Se a pessoa marcou o checkbox
+                        if st.checkbox(nome_display, key=chave_unica):
+                            
+                            # Define se o passo é de 0.5 (kg/litro) ou 1.0 (unidades/caixas)
+                            step_val = 0.5 if unidade in ['kg', 'litro', 'litros'] else 1.0
+                            
+                            qtd_doada = st.number_input(
+                                f"↳ Quantidade que você vai doar ({unidade}):",
+                                min_value=0.5 if step_val == 0.5 else 1.0,
+                                max_value=float(falta),
+                                step=step_val,
+                                value=float(falta),
+                                key=f"qtd_{idx}"
+                            )
+                            # Salva o dicionário com a quantidade que a pessoa escolheu
+                            selecionados_agora.append({"idx": idx, "qtd": qtd_doada, "unidade": unidade, "item": row['Item']})
             
             if st.button("Próximo ➡️"):
                 if selecionados_agora:
@@ -187,16 +192,16 @@ if menu == "Área de Doação (Irmãos)":
                     st.session_state.etapa = 2
                     st.rerun()
                 else:
-                    st.warning("Por favor, selecione pelo menos um item para continuar.")
+                    st.warning("Selecione pelo menos um item para continuar.")
                     
         # ETAPA 2: CONFIRMAÇÃO
         elif st.session_state.etapa == 2:
             st.header("2. Confirme sua doação")
-            st.write("**Você selecionou:**")
+            st.write("**Você está doando:**")
             
-            for idx in st.session_state.itens_selecionados:
-                nome_do_item = df_doacoes.at[idx, 'Item']
-                st.success(f"✅ {nome_do_item}")
+            for item_data in st.session_state.itens_selecionados:
+                qtd_formatada = int(item_data['qtd']) if float(item_data['qtd']).is_integer() else item_data['qtd']
+                st.success(f"✅ {item_data['item']} - {qtd_formatada} {item_data['unidade']}")
                 
             nome_doador = st.text_input("Qual é o seu nome ou da sua família?")
             
@@ -208,10 +213,28 @@ if menu == "Área de Doação (Irmãos)":
             with col2:
                 if st.button("💾 Confirmar Doação"):
                     if nome_doador:
-                        # Salva usando o número da linha para não confundir itens iguais
-                        for idx in st.session_state.itens_selecionados:
-                            df_doacoes.at[idx, 'Status'] = 'Doado'
-                            df_doacoes.at[idx, 'Doador'] = nome_doador
+                        for item_data in st.session_state.itens_selecionados:
+                            idx = item_data['idx']
+                            qtd_doada = item_data['qtd']
+                            unid = item_data['unidade']
+                            
+                            # Subtrai do faltante
+                            df_doacoes.at[idx, 'Qtd_Faltante'] -= qtd_doada
+                            
+                            # Registra o nome + quantidade q a pessoa deu
+                            qtd_fmt = int(qtd_doada) if float(qtd_doada).is_integer() else qtd_doada
+                            novo_registro = f"{nome_doador} ({qtd_fmt} {unid})"
+                            
+                            doadores_atuais = str(df_doacoes.at[idx, 'Doadores'])
+                            if doadores_atuais == "nan" or doadores_atuais.strip() == "":
+                                df_doacoes.at[idx, 'Doadores'] = novo_registro
+                            else:
+                                df_doacoes.at[idx, 'Doadores'] = doadores_atuais + ", " + novo_registro
+                            
+                            # Se zerou, marca como doado
+                            if df_doacoes.at[idx, 'Qtd_Faltante'] <= 0:
+                                df_doacoes.at[idx, 'Status'] = 'Doado'
+                                df_doacoes.at[idx, 'Qtd_Faltante'] = 0.0
                         
                         salvar_dados(df_doacoes)
                         
@@ -223,24 +246,62 @@ if menu == "Área de Doação (Irmãos)":
                         st.error("Por favor, preencha o seu nome.")
 
 # ==========================================
-# 5. TELA 2: PAINEL DE CONTROLE (Coordenador)
+# 5. TELA 2: PAINEL DE CONTROLE 
 # ==========================================
 elif menu == "Painel de Controle (Coordenação)":
-    st.title("📊 Painel de Controle - Coordenação")
-    st.write("Acompanhe aqui como estão as doações em tempo real.")
+    st.title("📊 Painel de Controle")
     
-    total_itens = len(df_doacoes)
-    total_doados = len(df_doacoes[df_doacoes['Status'] == 'Doado'])
-    total_pendentes = len(df_doacoes[df_doacoes['Status'] == 'Pendente'])
+    # ----------------------------------------------------
+    # BOTÕES DE EXPORTAÇÃO (XLS e PDF)
+    # ----------------------------------------------------
+    col_pdf, col_xls = st.columns(2)
     
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total de Itens", total_itens)
-    col2.metric("✅ Já Doados", total_doados)
-    col3.metric("⏳ Pendentes", total_pendentes)
+    # Gerar Excel
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df_doacoes.to_excel(writer, index=False, sheet_name="Doacoes")
+    
+    with col_xls:
+        st.download_button(
+            label="📊 Baixar Relatório (Excel)",
+            data=buffer.getvalue(),
+            file_name="relatorio_ecc.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    # Gerar PDF
+    def gerar_pdf(df):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, "Relatório de Doações - ECC", ln=True, align='C')
+        pdf.ln(5)
+        
+        pdf.set_font("Arial", size=10)
+        for _, row in df.iterrows():
+            falta_disp = int(row['Qtd_Faltante']) if float(row['Qtd_Faltante']).is_integer() else row['Qtd_Faltante']
+            tot_disp = int(row['Qtd_Total']) if float(row['Qtd_Total']).is_integer() else row['Qtd_Total']
+            
+            texto = f"[{row['Status'].upper()}] {row['Categoria']} | {row['Item']}: Falta {falta_disp} de {tot_disp} {row['Unidade']} -> Doadores: {row['Doadores']}"
+            texto_seguro = texto.encode('latin-1', 'replace').decode('latin-1')
+            pdf.multi_cell(0, 8, txt=texto_seguro)
+            
+        return pdf.output(dest="S").encode("latin-1")
+    
+    with col_pdf:
+        st.download_button(
+            label="📄 Baixar Relatório (PDF)",
+            data=gerar_pdf(df_doacoes),
+            file_name="relatorio_ecc.pdf",
+            mime="application/pdf"
+        )
     
     st.divider()
-    
-    st.subheader("📋 Lista Completa")
+
+    # ----------------------------------------------------
+    # TABELA VISUAL
+    # ----------------------------------------------------
+    st.subheader("📋 Acompanhamento ao Vivo")
     filtro_status = st.radio("Filtrar por:", ["Todos", "Apenas Pendentes", "Apenas Doados"], horizontal=True)
     
     if filtro_status == "Apenas Pendentes":
@@ -253,69 +314,65 @@ elif menu == "Painel de Controle (Coordenação)":
     st.dataframe(df_mostrar, use_container_width=True, hide_index=True)
 
     # ----------------------------------------------------
-    # NOVA SEÇÃO: ADICIONAR ITENS (Pedido recente)
+    # ADICIONAR NOVO ITEM
     # ----------------------------------------------------
     st.divider()
     st.subheader("➕ Adicionar Novo Item")
-    st.write("Faltou alguma coisa na lista original? Adicione aqui e aparecerá para os irmãos doarem.")
     
-    # Pega a lista de categorias que já existem para o coordenador escolher
-    lista_categorias_existentes = df_doacoes['Categoria'].unique().tolist()
+    lista_categorias = df_doacoes['Categoria'].unique().tolist()
+    nova_categoria = st.selectbox("Escolha a Área/Categoria:", lista_categorias)
+    novo_nome_item = st.text_input("Nome do item (Ex: Pão Francês)")
     
-    col_cat, col_item = st.columns([1, 2])
-    with col_cat:
-        # Caixa de seleção para a Área (Categoria)
-        nova_categoria = st.selectbox("Escolha a Área/Categoria:", lista_categorias_existentes)
-    with col_item:
-        # Nome do novo item e quantidade
-        novo_nome_item = st.text_input("Nome do item e quantidade (Ex: Pão Francês (50 unid.))")
+    col_qtd, col_un = st.columns(2)
+    with col_qtd:
+        nova_qtd = st.number_input("Quantidade Total (Ex: 50)", min_value=0.5, step=1.0)
+    with col_un:
+        nova_unidade = st.text_input("Unidade (Ex: kg, unid, L)")
         
-    if st.button("Adicionar Item à Lista Pública"):
-        if novo_nome_item.strip() != "":
-            # Cria a linha do novo item
+    if st.button("Adicionar Item à Lista"):
+        if novo_nome_item.strip() != "" and nova_unidade.strip() != "":
             nova_linha = {
                 "Categoria": nova_categoria, 
                 "Item": novo_nome_item, 
+                "Qtd_Total": float(nova_qtd),
+                "Unidade": nova_unidade,
+                "Qtd_Faltante": float(nova_qtd),
                 "Status": "Pendente", 
-                "Doador": ""
+                "Doadores": ""
             }
-            # Adiciona o novo item no final do banco de dados principal
             df_doacoes = pd.concat([df_doacoes, pd.DataFrame([nova_linha])], ignore_index=True)
-            salvar_dados(df_doacoes) # Salva no CSV
-            
-            st.success(f"Show! O item '{novo_nome_item}' foi adicionado em '{nova_categoria}'.")
-            st.rerun() # Atualiza a tela para mostrar a tabela nova
+            salvar_dados(df_doacoes)
+            st.success(f"Item adicionado!")
+            st.rerun()
         else:
-            st.error("Por favor, digite o nome e a quantidade do item que deseja adicionar.")
-
+            st.error("Preencha o nome e a unidade.")
 
     # ----------------------------------------------------
-    # SEÇÃO EXISTENTE: CORRIGIR/CANCELAR DOAÇÃO
+    # CANCELAR/RESETAR ITEM
     # ----------------------------------------------------
     st.divider()
-    st.subheader("❌ Corrigir/Cancelar Doação")
-    st.write("Se alguém desistir ou marcou errado, devolva o item para a lista de pendentes aqui.")
+    st.subheader("❌ Resetar Doação de um Item")
+    st.warning("Atenção: Cancelar um item vai apagar TODAS as doações registradas nele e voltar a quantidade faltante pro máximo.")
     
-    df_doados = df_doacoes[df_doacoes['Status'] == 'Doado']
+    df_alterados = df_doacoes[df_doacoes['Qtd_Faltante'] < df_doacoes['Qtd_Total']]
     opcoes_cancelar = ["Selecione..."]
     dict_cancelar = {}
     
-    for idx, row in df_doados.iterrows():
-        # Cria um texto com o NOME DO ITEM + NOME DO DOADOR (facilita para itens repetidos)
-        texto_opcao = f"{row['Item']} (Doado por: {row['Doador']})"
+    for idx, row in df_alterados.iterrows():
+        texto_opcao = f"{row['Item']} (Doado por: {row['Doadores']})"
         opcoes_cancelar.append(texto_opcao)
         dict_cancelar[texto_opcao] = idx
         
-    item_para_cancelar = st.selectbox("Escolha a doação para cancelar:", opcoes_cancelar)
+    item_para_cancelar = st.selectbox("Escolha o item para resetar:", opcoes_cancelar)
     
-    if st.button("Cancelar doação deste item"):
+    if st.button("Resetar este item para Pendente"):
         if item_para_cancelar != "Selecione...":
             idx_cancelar = dict_cancelar[item_para_cancelar]
             
-            # Reseta o item na planilha
             df_doacoes.at[idx_cancelar, 'Status'] = 'Pendente'
-            df_doacoes.at[idx_cancelar, 'Doador'] = ''
+            df_doacoes.at[idx_cancelar, 'Qtd_Faltante'] = df_doacoes.at[idx_cancelar, 'Qtd_Total']
+            df_doacoes.at[idx_cancelar, 'Doadores'] = ''
             salvar_dados(df_doacoes)
             
-            st.success("Doação cancelada! O item voltou para a lista de pendentes.")
+            st.success("Item resetado com sucesso!")
             st.rerun()

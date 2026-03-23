@@ -240,7 +240,7 @@ elif menu == "Painel de Controle (Coordenação)":
     
     st.divider()
     
-    st.subheader("Lista Completa")
+    st.subheader("📋 Lista Completa")
     filtro_status = st.radio("Filtrar por:", ["Todos", "Apenas Pendentes", "Apenas Doados"], horizontal=True)
     
     if filtro_status == "Apenas Pendentes":
@@ -252,9 +252,49 @@ elif menu == "Painel de Controle (Coordenação)":
         
     st.dataframe(df_mostrar, use_container_width=True, hide_index=True)
 
-    # NOVIDADE AQUI: Lógica mais segura para cancelar itens repetidos
+    # ----------------------------------------------------
+    # NOVA SEÇÃO: ADICIONAR ITENS (Pedido recente)
+    # ----------------------------------------------------
     st.divider()
-    st.subheader("Corrigir/Cancelar Doação")
+    st.subheader("➕ Adicionar Novo Item")
+    st.write("Faltou alguma coisa na lista original? Adicione aqui e aparecerá para os irmãos doarem.")
+    
+    # Pega a lista de categorias que já existem para o coordenador escolher
+    lista_categorias_existentes = df_doacoes['Categoria'].unique().tolist()
+    
+    col_cat, col_item = st.columns([1, 2])
+    with col_cat:
+        # Caixa de seleção para a Área (Categoria)
+        nova_categoria = st.selectbox("Escolha a Área/Categoria:", lista_categorias_existentes)
+    with col_item:
+        # Nome do novo item e quantidade
+        novo_nome_item = st.text_input("Nome do item e quantidade (Ex: Pão Francês (50 unid.))")
+        
+    if st.button("Adicionar Item à Lista Pública"):
+        if novo_nome_item.strip() != "":
+            # Cria a linha do novo item
+            nova_linha = {
+                "Categoria": nova_categoria, 
+                "Item": novo_nome_item, 
+                "Status": "Pendente", 
+                "Doador": ""
+            }
+            # Adiciona o novo item no final do banco de dados principal
+            df_doacoes = pd.concat([df_doacoes, pd.DataFrame([nova_linha])], ignore_index=True)
+            salvar_dados(df_doacoes) # Salva no CSV
+            
+            st.success(f"Show! O item '{novo_nome_item}' foi adicionado em '{nova_categoria}'.")
+            st.rerun() # Atualiza a tela para mostrar a tabela nova
+        else:
+            st.error("Por favor, digite o nome e a quantidade do item que deseja adicionar.")
+
+
+    # ----------------------------------------------------
+    # SEÇÃO EXISTENTE: CORRIGIR/CANCELAR DOAÇÃO
+    # ----------------------------------------------------
+    st.divider()
+    st.subheader("❌ Corrigir/Cancelar Doação")
+    st.write("Se alguém desistir ou marcou errado, devolva o item para a lista de pendentes aqui.")
     
     df_doados = df_doacoes[df_doacoes['Status'] == 'Doado']
     opcoes_cancelar = ["Selecione..."]
@@ -266,7 +306,7 @@ elif menu == "Painel de Controle (Coordenação)":
         opcoes_cancelar.append(texto_opcao)
         dict_cancelar[texto_opcao] = idx
         
-    item_para_cancelar = st.selectbox("Se alguém desistiu, escolha o item para voltar para pendente:", opcoes_cancelar)
+    item_para_cancelar = st.selectbox("Escolha a doação para cancelar:", opcoes_cancelar)
     
     if st.button("Cancelar doação deste item"):
         if item_para_cancelar != "Selecione...":

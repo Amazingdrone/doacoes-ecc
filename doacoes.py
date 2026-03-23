@@ -9,11 +9,57 @@ from fpdf import FPDF
 # ==========================================
 st.set_page_config(page_title="Doações ECC", layout="centered")
 
-# Mudei o nome do arquivo para V2 para resetar o formato antigo e não dar erro!
 ARQUIVO_DADOS = 'banco_doacoes_v2.csv'
 
 # ==========================================
-# 2. INICIALIZAÇÃO DO BANCO DE DADOS (CSV)
+# 2. FUNÇÃO DE EMOJIS AUTOMÁTICOS
+# ==========================================
+def obter_emoji(item_nome):
+    nome = item_nome.lower()
+    if "arroz" in nome: return "🍚"
+    if "frango" in nome: return "🍗"
+    if "carne" in nome: return "🥩"
+    if "macarrão" in nome: return "🍝"
+    if "batata" in nome: return "🥔"
+    if "tomate" in nome: return "🍅"
+    if "alface" in nome: return "🥬"
+    if "cenoura" in nome: return "🥕"
+    if "vagem" in nome or "ervilha" in nome: return "🫛"
+    if "champion" in nome or "cogumelo" in nome: return "🍄"
+    if "ketchup" in nome or "mostarda" in nome or "massa" in nome or "creme de leite" in nome or "leite moça" in nome: return "🥫"
+    if "shoyo" in nome or "vinagre" in nome or "óleo" in nome: return "🫙"
+    if "suco" in nome: return "🧃"
+    if "limão" in nome: return "🍋"
+    if "copo" in nome or "copinho" in nome: return "🥤"
+    if "milho" in nome: return "🌽"
+    if "maionese" in nome or "requeijão" in nome or "margarina" in nome: return "🧈"
+    if "coco" in nome: return "🥥"
+    if "leite" in nome: return "🥛"
+    if "pudim" in nome: return "🍮"
+    if "chantily" in nome: return "🧁"
+    if "açúcar" in nome or "sal " in nome or "sal" == nome.strip() or "pimenta" in nome: return "🧂"
+    if "coca" in nome or "guaraná" in nome or "fanta" in nome or "refrigerante" in nome: return "🥤"
+    if "água" in nome: return "💧"
+    if "morango" in nome: return "🍓"
+    if "uva" in nome: return "🍇"
+    if "mamão" in nome: return "🍈"
+    if "ovo" in nome: return "🥚"
+    if "queijo" in nome: return "🧀"
+    if "presunto" in nome or "salame" in nome or "mortadela" in nome: return "🥓"
+    if "café" in nome: return "☕"
+    if "bolacha" in nome or "biscoito" in nome: return "🍪"
+    if "chá" in nome: return "🍵"
+    if "maçã" in nome: return "🍎"
+    if "abacaxi" in nome: return "🍍"
+    if "cravo" in nome or "canela" in nome: return "🍂"
+    if "cebola" in nome: return "🧅"
+    if "alho" in nome: return "🧄"
+    if "orégano" in nome or "cheiro verde" in nome or "salsão" in nome or "poró" in nome: return "🌿"
+    if "pimentão" in nome: return "🫑"
+    return "📦" # Emoji padrão se não encontrar a palavra
+
+# ==========================================
+# 3. INICIALIZAÇÃO DO BANCO DE DADOS (CSV)
 # ==========================================
 def carregar_dados():
     if os.path.exists(ARQUIVO_DADOS):
@@ -132,14 +178,14 @@ if 'itens_selecionados' not in st.session_state:
     st.session_state.itens_selecionados = []
 
 # ==========================================
-# 3. MENU LATERAL
+# 4. MENU LATERAL
 # ==========================================
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3048/3048122.png", width=100)
 st.sidebar.title("Menu ECC")
 menu = st.sidebar.radio("Escolha a página:", ["Área de Doação (Irmãos)", "Painel de Controle (Coordenação)"])
 
 # ==========================================
-# 4. TELA 1: ÁREA DE DOAÇÃO (PARCIAL)
+# 5. TELA 1: ÁREA DE DOAÇÃO (PARCIAL)
 # ==========================================
 if menu == "Área de Doação (Irmãos)":
     st.title("Lista de Doações - ECC 🙏")
@@ -166,7 +212,9 @@ if menu == "Área de Doação (Irmãos)":
                         falta_disp = int(falta) if falta.is_integer() else falta
                         total_disp = int(row['Qtd_Total']) if float(row['Qtd_Total']).is_integer() else row['Qtd_Total']
                         
-                        nome_display = f"📦 {row['Item']} (Falta: {falta_disp} {unidade} de {total_disp} {unidade})"
+                        # O EMOJI MÁGICO ENTRA AQUI!
+                        emoji = obter_emoji(row['Item'])
+                        nome_display = f"{emoji} {row['Item']} (Falta: {falta_disp} {unidade} de {total_disp} {unidade})"
                         chave_unica = f"item_{idx}"
                         
                         # Se a pessoa marcou o checkbox
@@ -183,8 +231,7 @@ if menu == "Área de Doação (Irmãos)":
                                 value=float(falta),
                                 key=f"qtd_{idx}"
                             )
-                            # Salva o dicionário com a quantidade que a pessoa escolheu
-                            selecionados_agora.append({"idx": idx, "qtd": qtd_doada, "unidade": unidade, "item": row['Item']})
+                            selecionados_agora.append({"idx": idx, "qtd": qtd_doada, "unidade": unidade, "item": row['Item'], "emoji": emoji})
             
             if st.button("Próximo ➡️"):
                 if selecionados_agora:
@@ -201,7 +248,7 @@ if menu == "Área de Doação (Irmãos)":
             
             for item_data in st.session_state.itens_selecionados:
                 qtd_formatada = int(item_data['qtd']) if float(item_data['qtd']).is_integer() else item_data['qtd']
-                st.success(f"✅ {item_data['item']} - {qtd_formatada} {item_data['unidade']}")
+                st.success(f"✅ {item_data['emoji']} {item_data['item']} - {qtd_formatada} {item_data['unidade']}")
                 
             nome_doador = st.text_input("Qual é o seu nome ou da sua família?")
             
@@ -246,7 +293,7 @@ if menu == "Área de Doação (Irmãos)":
                         st.error("Por favor, preencha o seu nome.")
 
 # ==========================================
-# 5. TELA 2: PAINEL DE CONTROLE 
+# 6. TELA 2: PAINEL DE CONTROLE 
 # ==========================================
 elif menu == "Painel de Controle (Coordenação)":
     st.title("📊 Painel de Controle")

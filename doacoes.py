@@ -190,14 +190,24 @@ menu = st.sidebar.radio("Escolha a página:", ["Área de Doação (Irmãos)", "P
 if menu == "Área de Doação (Irmãos)":
     st.title("Lista de Doações - ECC 🙏")
     
+    # --- INÍCIO DO CABEÇALHO E INSTRUÇÕES ---
+    st.info("💰 **Se preferir doar em dinheiro, favor fazer pix para igreja acrescentando R$ 0,07.**\n\n**PIX:** `pippg@pippg.org.br`")
+    
+    st.markdown("""
+    **Instruções de uso:**
+    1. Escolha sua doação e a quantidade do item.
+    2. Clique em **Próximo ➡️**.
+    3. Inclua o nome do doador e confirme a doação.
+    """)
+    st.divider()
+    # --- FIM DO CABEÇALHO E INSTRUÇÕES ---
+    
     df_pendentes = df_doacoes[df_doacoes["Status"] == "Pendente"]
 
     if df_pendentes.empty:
         st.success("Glória a Deus! Todos os itens já foram doados.")
     else:
         if st.session_state.etapa == 1:
-            st.write("Marque o que deseja doar. Se o item tiver muita quantidade, você pode escolher doar apenas uma parte!")
-            
             selecionados_agora = []
             
             categorias = df_pendentes['Categoria'].unique()

@@ -197,7 +197,7 @@ if menu == "Área de Doação (Irmãos)":
     **Instruções de uso:**
     1. Escolha sua doação e a quantidade do item.
     2. Clique em **Próximo ➡️**.
-    3. Inclua o nome do doador e confirme a doação.
+    3. Inclua o nome do doador e confirme a doação, PRONTO! OBRIGADO!
     """)
     st.divider()
     # --- FIM DO CABEÇALHO E INSTRUÇÕES ---

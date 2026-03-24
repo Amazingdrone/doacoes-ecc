@@ -423,3 +423,32 @@ elif menu == "Painel de Controle (Coordenação)":
             
             st.success("Item resetado com sucesso!")
             st.rerun()
+            
+    # ----------------------------------------------------
+    # EXCLUIR ITEM DEFINITIVAMENTE
+    # ----------------------------------------------------
+    st.divider()
+    st.subheader("🗑️ Excluir Item da Lista")
+    st.warning("Atenção: Isso apagará o item completamente da lista de doações, independente de já ter sido doado ou não.")
+    
+    opcoes_excluir = ["Selecione..."]
+    dict_excluir = {}
+    
+    for idx, row in df_doacoes.iterrows():
+        # Cria um texto mostrando a categoria e o item para evitar exclusão errada de itens com mesmo nome
+        texto_opcao = f"[{row['Categoria']}] {row['Item']}"
+        opcoes_excluir.append(texto_opcao)
+        dict_excluir[texto_opcao] = idx
+        
+    item_para_excluir = st.selectbox("Escolha o item para excluir permanentemente:", opcoes_excluir)
+    
+    if st.button("Excluir Item"):
+        if item_para_excluir != "Selecione...":
+            idx_excluir = dict_excluir[item_para_excluir]
+            
+            # Remove a linha do banco de dados e reorganiza o índice para não quebrar a lógica
+            df_doacoes = df_doacoes.drop(idx_excluir).reset_index(drop=True)
+            salvar_dados(df_doacoes)
+            
+            st.success(f"O item foi excluído definitivamente da lista.")
+            st.rerun()
